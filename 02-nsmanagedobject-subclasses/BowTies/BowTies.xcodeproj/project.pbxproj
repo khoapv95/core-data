@@ -50,8 +50,6 @@
 		FEC6D46B22ECFEB0004D739C = {
 			isa = PBXGroup;
 			children = (
-				4C3270912942FD94001A6BA3 /* BowTie+CoreDataClass.swift */,
-				4C3270922942FD94001A6BA3 /* BowTie+CoreDataProperties.swift */,
 				FEC6D47622ECFEB0004D739C /* BowTies */,
 				FEC6D47522ECFEB0004D739C /* Products */,
 			);
@@ -80,6 +78,8 @@
 				FEC6D48822ECFEB1004D739C /* Info.plist */,
 				FEC6D48022ECFEB0004D739C /* BowTies.xcdatamodeld */,
 				4C32708F2942FB1E001A6BA3 /* ColorAttributeTransformer.swift */,
+				4C3270912942FD94001A6BA3 /* BowTie+CoreDataClass.swift */,
+				4C3270922942FD94001A6BA3 /* BowTie+CoreDataProperties.swift */,
 			);
 			path = BowTies;
 			sourceTree = "<group>";
