@@ -42,6 +42,7 @@ class ViewController: UIViewController {
 
   var fetchRequest: NSFetchRequest<Venue>?
   var venues: [Venue] = []
+  var asyncFetchRequest: NSAsynchronousFetchRequest<Venue>?
 
   // MARK: - IBOutlets
   @IBOutlet weak var tableView: UITableView!
@@ -52,12 +53,42 @@ class ViewController: UIViewController {
 
     importJSONSeedDataIfNeeded()
 
-    guard let model = coreDataStack.managedContext.persistentStoreCoordinator?.managedObjectModel,
-    let fetchRequest = model.fetchRequestTemplate(forName: "FetchRequest") as? NSFetchRequest<Venue> else { return
+    let batchUpdate = NSBatchUpdateRequest(entityName: "Venue")
+    batchUpdate.propertiesToUpdate = [#keyPath(Venue.favorite): true]
+
+    batchUpdate.affectedStores = coreDataStack.managedContext
+      .persistentStoreCoordinator?.persistentStores
+
+    batchUpdate.resultType = .updatedObjectsCountResultType
+
+    do {
+      let batchResult = try coreDataStack.managedContext.execute(batchUpdate) as? NSBatchUpdateResult
+      print("Records updated \(String(describing: batchResult?.result))")
+    } catch let error as NSError {
+      print("Coiuld not update \(error), \(error.userInfo)")
     }
 
-    self.fetchRequest = fetchRequest
-    fetchAndReload()
+    let venueFetchRequest: NSFetchRequest<Venue> = Venue.fetchRequest()
+    fetchRequest = venueFetchRequest
+
+    asyncFetchRequest = NSAsynchronousFetchRequest<Venue>(fetchRequest: venueFetchRequest) {
+      [unowned self] (result: NSAsynchronousFetchResult) in
+
+      guard let venues = result.finalResult else {
+        return
+      }
+
+      self.venues = venues
+      self.tableView.reloadData()
+    }
+
+    do {
+      guard let asyncFetchRequest = asyncFetchRequest else { return }
+      try coreDataStack.managedContext.execute(asyncFetchRequest)
+      // Returns immediately, cancel here if you want
+    } catch let error as NSError {
+      print("Could not fetch \(error), \(error.userInfo)")
+    }
   }
 
   // MARK: - Navigation
@@ -71,6 +102,7 @@ class ViewController: UIViewController {
       return
     }
     filterVC.coreDataStack = coreDataStack
+    filterVC.delegate = self
   }
 }
 
@@ -179,5 +211,27 @@ extension ViewController {
     }
 
     coreDataStack.saveContext()
+  }
+}
+
+extension ViewController: FilterViewControllerDelegate {
+
+  func filterViewController(filter: FilterViewController,
+                            didSelectPredicate predicate: NSPredicate?,
+                            sortDescriptor: NSSortDescriptor?) {
+
+    guard let fetchRequest = fetchRequest else { return }
+
+    // Reset predicate and predicate
+    fetchRequest.predicate = nil
+    fetchRequest.predicate = nil
+
+    fetchRequest.predicate = predicate
+
+    if let sort = sortDescriptor {
+      fetchRequest.sortDescriptors = [sort]
+    }
+
+    fetchAndReload()
   }
 }
